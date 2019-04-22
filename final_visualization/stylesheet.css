@@ -1,0 +1,58 @@
+body {
+	-webkit-user-select: none;
+}
+
+#raw_data {
+	display: none;
+}
+
+#container {
+	margin-left: auto;
+	margin-right: auto;
+	width: 1600px;
+}
+
+#center_helper {
+	margin-left: auto;
+	margin-right: auto;
+	width: 1500px;
+}
+
+#parameter_algorithm_inputs {
+	float: left;
+	margin-right: 70px;
+	width: 530px;
+}
+
+#svg_container {
+	width: 1500px;
+}
+
+.boundary {
+  fill: none;
+  stroke: black;
+  stroke-width: .05%;
+}
+
+textarea {
+	min-height: 36px;
+	max-height: 120px;
+	min-width: 200px;
+	max-width: 200px;
+}
+
+#average_options {
+	color: grey;
+}
+
+.tooltip {
+
+    width: auto;
+    height: auto;
+    font: 14px sans-serif;
+    font-weight: bold;
+    background: white;
+    border-radius: 5px;
+    pointer-events: none;
+    padding: 3px 3px 3px 3px;
+}

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <!-- Meta Tag -->
+    <meta charset="utf-8">
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" type="text/css" href="stylesheet.css">
+    <!-- D3.js Source -->
+    <script src="scripts/d3.v3.min.js" charset="utf-8"></script>
+    <!-- TopoJSON Source -->
+    <script src="scripts/topojson.v1.min.js"></script>
+    <!-- Color Brewer -->
+    <script src="scripts/colorbrewer.v1.min.js"></script>
+  </head>
+
+  <body>
+    <h1 style = "text-align:center; color:#000000"><bold>Los Angeles County Zillow vs. ML MSE</bold></h1>
+    
+	<!-- the raw data div -->
+	
+	<div id="raw_data"></div>
+	
+	<div id="container">
+	
+	<div id="center_helper">
+	
+	<div id="parameter_algorithm_inputs">
+	<!-- D3.js code -->
+
+      <p><b>Enter parameters below to see difference in prediction error.</b></p>
+	  <p><b>ALL RANGES ARE INCLUSIVE.  FOR EXAMPLE, RANGE 1 - 4 MEANS INCLUDING 1 AND INCLUDING 4.</b></p>
+	  <p><b>Make sure not to leave blank lines in the filter fields.</b></p>
+	  
+	  <table>
+	  <tr><th colspan=5>Dataset</th></tr>
+	  <tr><td></td><td id="dataset_options"><input type="checkbox" checked name="dataset" value="cleaned.csv">small set&nbsp;&nbsp;&nbsp;<input type="checkbox" name="dataset" value="cleaned_true.csv">large set</td><td><button id="load_data" class="Button">Load Data</button></td></tr>
+	  </table>
+	  
+	  <table>
+	  <tr><th colspan=3>Parameters</th></tr>
+	  <tr><td># Bathrooms</td><td><textarea id="bathroomcnt"></textarea></td><td>Range: 1 - 16</td></tr>
+	  <tr><td># Bedrooms</td><td><textarea id="bedroomcnt"></textarea></td><td>Range: 1 - 18</td></tr>
+	  <tr><td>Finished Sq. Ft.</td><td><textarea id="calculatedfinishedsquarefeet"></textarea></td><td>Range: 2 - 5205</td></tr>
+	  <tr><td>Property Land Use Type ID</td><td><textarea id="propertylandusetypeid"></textarea></td><td>Range: 1 - 11</td></tr>
+	  
+	  <tr><td>Year Built</td><td><textarea id="yearbuilt"></textarea></td><td>Range: 1824 - 2016</td></tr>
+	  <tr><td>Tax Assessment Amount</td><td><textarea id="structuretaxvaluedollarcnt"></textarea></td><td>Range: 0 - 15489086</td></tr>
+	  <tr><td>Assessment Year</td><td><textarea id="assessmentyear"></textarea></td><td>Range: 2015 - 2016</td></tr>
+	  <!-- tr><td>Zip Code</td><td><textarea id="regionidzip"></textarea></td><td>Range: 95982 - 399675</td></tr -->
+	  <tr><td>Census Track and Block</td><td><textarea id="rawcensustractandblock"></textarea></td><td>Ex: 06037482101</td></tr>
+	  </table>
+	  
+	  <table>
+	  <tr><th colspan=5>Algorithms</th></tr>
+	  <tr><td></td><td id="algorithm_options"><input type="checkbox" checked name="algorithm" value="zillow">Zillow&nbsp;&nbsp;&nbsp;<input type="checkbox" name="algorithm" value="RF">RF&nbsp;&nbsp;&nbsp;<input type="checkbox" name="algorithm" value="stacking">Stacking&nbsp;&nbsp;&nbsp;<input type="checkbox" name="algorithm" value="DNN">DNN</tr>
+	  <tr id="average_options" style="color: grey"><td>Averaging</td><td><input type="checkbox" checked disabled="disabled" name="average" value="mean">Mean&nbsp;&nbsp;&nbsp;<input type="checkbox" disabled="disabled" name="average" value="median">Median</td></tr>
+	  <tr><td colspan=5><button id="Update" class="Button">Update</button></td></tr>
+	  </table>
+	  
+	  
+	  
+	 </div>
+	 
+	 <div id="svg_container">
+	  
+
+	<script type="text/javascript" src="scripts/cities.js"></script>
+	<script type="text/javascript" src="scripts/legend.js"></script>
+	<script type="text/javascript" src="scripts/jquery-3.4.0.slim.min.js"></script>
+	<script type="text/javascript">
+	
+	// Add some special code to bind the listener for the load data button.	
+	$('#load_data').on('click', function() {
+		
+			// Read the checkboxes.
+			var which_set = '';
+			
+			$('#dataset_options input').each(function(index) {
+			
+				var checked_one = -1;
+				var unchecked_one = -1;
+				
+				// Set the data set.
+				if($(this).is(':checked')) {
+				
+					which_set = $(this).val();
+					
+					if(index == 1) {
+						unchecked_one = 0;
+						checked_one = 1;
+					} else {
+						unchecked_one = 1;
+						checked_one = 0;
+					}					
+					
+				}
+				
+				// Swap availability.
+				$('#dataset_options input').eq(checked_one).attr('disabled', true);
+				$('#dataset_options input').eq(checked_one).css('color', 'grey');
+				$('#dataset_options input').eq(unchecked_one).attr('disabled', false);
+				$('#dataset_options input').eq(unchecked_one).css('color', 'black');
+				
+			});
+			
+			load_data(which_set);
+		
+		});
+	
+	// Add some special code to bind the listener for the update button.	
+	$('svg').on('load', function() {
+	
+		$('#Update').on('click', function() {
+		
+			update();
+		
+		});
+	
+	});
+	
+	// Dictate the algorithm options behavior.
+	$('#algorithm_options input').on('click', function() {
+	
+		// TO-DO: PUT IN BEHAVIOR THAT DISALLOWS SELECTING
+		// ZILLOW AS MULTI-ALGORITHM.
+	
+		// Only allow this input to be un-checked if at least
+		// one other input is checked.
+		// console.log($(this).is(':checked'));
+		
+		// First, see how many things are checked.
+		var checked_counter = 0;
+		
+		// Get the number of checked inputs.
+		$('#algorithm_options input').each(function() {
+		
+			if($(this).is(':checked')) {
+			
+				checked_counter += 1;
+			
+			}
+		
+		});
+		
+		//console.log('checked_counter!');
+		//console.log(checked_counter);
+		//console.log('stop!');
+		
+		// If only one thing is checked, we must keep it checked.
+		if(checked_counter == 0) {
+			
+			$(this).prop('checked', true);
+		
+		} else {
+		
+			// We can toggle it.
+			if($(this).is(':checked')) {
+			
+				$(this).prop('checked', true);
+			
+			} else {
+			
+				$(this).prop('checked', false);
+			
+			}
+			
+		}
+		
+		// If this is a non-zillow button, disable all others.
+		if($(this).val() != "zillow") {
+			$('#algorithm_options input:eq(0)').prop('checked', false);
+		} else {
+			$('#algorithm_options input:eq(1)').prop('checked', false);
+			$('#algorithm_options input:eq(2)').prop('checked', false);
+			$('#algorithm_options input:eq(3)').prop('checked', false);
+			
+			//checked_counter += 1;
+		}
+		
+		// Get the number of checked items.
+		var now_checked = 0;
+		
+		$('#algorithm_options input').each(function() {
+		
+			if($(this).is(':checked')) {
+			
+				now_checked += 1
+			
+			}
+		
+		});
+		
+		// The averaging options.
+		if(now_checked < 2) {
+		
+			// Disable averaging options.
+			$('#average_options').css('color', 'grey');
+			$('#average_options input').attr('disabled', true);
+		
+		} else {
+		
+			$('#average_options').css('color', 'black');
+			$('#average_options input').attr('disabled', false);
+		
+		}
+	
+	});
+	
+	// Dictate the averaging behavior.
+	$('#average_options input').on('click', function() {
+	
+		// The inputs are mutually exclusive, but one must
+		// always be checked.
+		
+		//console.log($(this).is(':checked'));
+		
+		// If it's already checked, uncheck the other one.
+		if(!($(this).is(':checked'))) {
+		
+			// Uncheck all then check this one.
+			$('#average_options input').each(function() {
+			
+				$(this).prop('checked', false);
+			
+			});
+			
+			$(this).prop('checked', true);
+		
+		} else {
+		
+			// Uncheck all then check this one.
+			$('#average_options input').each(function() {
+			
+				$(this).prop('checked', false);
+			
+			});
+			
+			$(this).prop('checked', true);
+		
+		}
+	
+	});
+	
+	// Dictate the load data behavior.
+	$('#dataset_options input').on('click', function() {
+	
+		// The inputs are mutually exclusive, but one must
+		// always be checked.
+		
+		//console.log($(this).is(':checked'));
+		
+		// If it's already checked, uncheck the other one.
+		if(!($(this).is(':checked'))) {
+		
+			// Uncheck all then check this one.
+			$('#average_options input').each(function() {
+			
+				$(this).prop('checked', false);
+			
+			});
+			
+			$(this).prop('checked', true);
+		
+		} else {
+		
+			// Uncheck all then check this one.
+			$('#dataset_options input').each(function() {
+			
+				$(this).prop('checked', false);
+			
+			});
+			
+			$(this).prop('checked', true);
+		
+		}
+	
+	});
+	
+	</script>
+	
+	
+
+</div>
+    <!-- Info -->
+
+    <!-- <h3>California Interactive Project</h3> -->
+    <!-- <h4>Professor Suresh K. Lodha</h4> -->
+
+
+    <!--
+    <h4>Description:</h4>
+    <p>Hover over each county with a mouse to see its population</p>
+    -->
+
+    <!-- Sources -->
+	<table>
+	<tr><td>Sources:</td><td><a href = "https://github.com/kthotav/D3Visualizations/tree/master/LA_SF" target="_blank">https://github.com/kthotav/D3Visualizations/tree/master/LA_SF</a></td></tr>
+	<tr><td></td><td><a href = "http://bl.ocks.org/mbostock/5562380" target="_blank">California Population Density Example by Mike Bostock</a></td></tr>
+	<tr><td></td><td><a href = "https://jonlabelle.com/snippets/view/javascript/calculate-mean-median-mode-and-range-in-javascript" target="_blank">https://jonlabelle.com/snippets/view/javascript/calculate-mean-median-mode-and-range-in-javascript</a></td></tr>
+	<tr><td></td><td><a href = "https://stackoverflow.com/questions/40328984/how-to-use-a-colorbrewer-scale" target="_blank">https://stackoverflow.com/questions/40328984/how-to-use-a-colorbrewer-scale</a></td></tr>
+	</table>
+    <!--
+    <ul>
+      <li></li>
+    </ul>
+    -->
+	</div>
+	
+	</div>
+  </body>
+
+</html>
