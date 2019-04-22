@@ -35,3 +35,11 @@ vecstack<br>
 3.1 Download the dataset from https://www.kaggle.com/c/zillow-prize-1/data<br>
 3.2 data pre-processing and feature engieering by open jupyter notebook: Preprocessing<br>
 3.3 Fitting the model by open jupyter notebook: baseline_model_improved<br>
+
+For the visualization:
+cd final_visualization  
+python3 server.py
+open your browser and go to "http://localhost:8000"
+
+### 4. DEMO Video
+https://www.youtube.com/watch?v=bH8HFiJJzbQ&feature=youtu.be
